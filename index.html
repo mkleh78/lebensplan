@@ -1,552 +1,1311 @@
-import React, { useState } from 'react';
-
-const LebensplanungFormular = () => {
-  // Zustand für alle Antworten
-  const [answers, setAnswers] = useState({});
-  // Zustand für den aktuellen Schritt
-  const [currentStep, setCurrentStep] = useState(0);
-  // Zustand für die Anzeige der Auswertung
-  const [showResults, setShowResults] = useState(false);
-
-  // Definition der Kategorien und Fragen
-  const categories = [
-    {
-      id: 'arbeit',
-      title: 'ARBEIT',
-      questions: [
-        { id: 'arbeit10', text: 'Welcher Arbeit möchte ich in 10 Jahren nachgehen?', type: 'text' },
-        { id: 'arbeit20', text: 'Welcher Arbeit möchte ich in 20 Jahren nachgehen?', type: 'text' },
-        { id: 'arbeit30', text: 'Welcher Arbeit möchte ich in 30 Jahren nachgehen?', type: 'text' },
-        { 
-          id: 'nochArbeiten', 
-          text: 'Will ich dann überhaupt noch arbeiten?', 
-          type: 'select',
-          options: ['Ja, Vollzeit', 'Ja, Teilzeit', 'Nur gelegentlich', 'Nein, gar nicht mehr']
-        },
-        { 
-          id: 'stellenwert', 
-          text: 'Welchen Stellenwert soll Arbeit in meinem Leben haben?', 
-          type: 'select',
-          options: ['Sehr hoch', 'Hoch', 'Ausgeglichen', 'Niedrig', 'Sehr niedrig']
-        },
-        { id: 'ruhestand', text: 'Wann möchte ich in den Ruhestand gehen?', type: 'text' },
-        { 
-          id: 'auszeit', 
-          text: 'Möchte ich schon vor dem Ruhestand eine längere Auszeit nehmen?', 
-          type: 'select',
-          options: ['Ja, definitiv', 'Eventuell', 'Eher nicht', 'Nein']
-        },
-        { 
-          id: 'durchstarten', 
-          text: 'Möchte ich noch einmal durchstarten, vielleicht sogar ein kleines Unternehmen oder ein Start-up gründen?', 
-          type: 'select',
-          options: ['Ja, definitiv', 'Wahrscheinlich', 'Vielleicht', 'Eher nicht', 'Auf keinen Fall']
-        },
-      ]
-    },
-    {
-      id: 'lebensmittelpunkt',
-      title: 'LEBENSMITTELPUNKT',
-      questions: [
-        { id: 'wohnort', text: 'Wo möchte ich leben? Warum ausgerechnet dort?', type: 'text' },
-        { 
-          id: 'auswandern', 
-          text: 'Kann ich mir vorstellen, das Land zu verlassen – auszuwandern – und wenn ja, wohin?', 
-          type: 'text' 
-        },
-        { 
-          id: 'eigentum', 
-          text: 'Wie wichtig ist mir in den nächsten Jahren das Eigentum, also ein eigenes Haus oder eine eigene Wohnung?', 
-          type: 'select',
-          options: ['Sehr wichtig', 'Wichtig', 'Neutral', 'Weniger wichtig', 'Unwichtig']
-        },
-        { 
-          id: 'lebensform', 
-          text: 'Wer lebt mit mir? Werde ich allein leben oder in einer Partnerschaft?', 
-          type: 'select',
-          options: ['Allein', 'Mit Partner/in', 'Mit Familie', 'In einer Wohngemeinschaft', 'Anders']
-        },
-        { id: 'partnerAlter', text: 'Wie alt wird meine Partnerin, mein Partner sein?', type: 'text', conditional: 'lebensform' },
-        { id: 'partnerTätigkeit', text: 'Was wird sie oder er machen?', type: 'text', conditional: 'lebensform' },
-        { id: 'kinder', text: 'Wenn ich Kinder habe, was werden die machen? Sollen sie mit mir leben?', type: 'text' },
-        { 
-          id: 'enkelkinder', 
-          text: 'Werde ich mich auch um Enkelkinder kümmern?', 
-          type: 'select',
-          options: ['Ja, intensiv', 'Gelegentlich', 'Eher nicht', 'Nein']
-        },
-        { 
-          id: 'eltern', 
-          text: 'Und was ist mit meinen Eltern, werden die mit mir leben?', 
-          type: 'select',
-          options: ['Ja, definitiv', 'Möglicherweise', 'Eher nicht', 'Auf keinen Fall']
-        },
-        { 
-          id: 'haustiere', 
-          text: 'Habe ich Haustiere?', 
-          type: 'select',
-          options: ['Ja, mehrere', 'Ja, eines', 'Noch nicht, aber geplant', 'Nein']
-        },
-      ]
-    },
-    {
-      id: 'versorgung',
-      title: 'VERSORGUNG',
-      questions: [
-        { id: 'unterstützung', text: 'Wenn ich an die nächsten 10 bis 20 Jahre denke, wen möchte ich unterstützt sehen?', type: 'text' },
-        { 
-          id: 'kinderUnterstützung', 
-          text: 'Werde ich meine Kinder unterstützen? Werde ich z. B. ihre Ausbildung finanzieren?', 
-          type: 'text' 
-        },
-        { id: 'eigenständigkeit', text: 'Wann, glaube ich, werden meine Kinder auf eigenen Füßen stehen?', type: 'text' },
-        { 
-          id: 'schenkungen', 
-          text: 'Plane ich Schenkungen an meine Kinder?', 
-          type: 'select',
-          options: ['Ja, umfangreich', 'Ja, moderat', 'Nur bei Bedarf', 'Eher nicht', 'Nein']
-        },
-        { 
-          id: 'immobilienÜbertragung', 
-          text: 'Gibt es die Überlegung, meinen Kindern eine Immobilie zu übertragen?', 
-          type: 'select',
-          options: ['Ja, definitiv', 'Eventuell', 'Eher nicht', 'Nein']
-        },
-        { id: 'pflege', text: 'Wie und wo möchte ich im Alter gepflegt werden?', type: 'text' },
-        { id: 'altersruhesitz', text: 'Habe ich schon so etwas wie einen Altersruhesitz im Auge?', type: 'text' },
-        { id: 'erbe', text: 'Wem möchte ich mein Vermögen vererben? Jemanden innerhalb oder außerhalb der Familie?', type: 'text' },
-        { 
-          id: 'spende', 
-          text: 'Will ich mit meinem Erbe eine gemeinnützige Organisation unterstützen? Wenn ja, wie hoch soll diese Unterstützung sein?', 
-          type: 'text' 
-        },
-      ]
-    },
-    {
-      id: 'freizeit',
-      title: 'FREIZEIT',
-      questions: [
-        { id: 'hobbys', text: 'Wie sieht meine Freizeit aus? Welchen Hobbys möchte ich nachgehen?', type: 'text' },
-        { 
-          id: 'neueHobbys', 
-          text: 'Möchte ich mich neuen Hobbys widmen?', 
-          type: 'select',
-          options: ['Ja, definitiv', 'Wahrscheinlich', 'Vielleicht', 'Eher nicht', 'Nein']
-        },
-        { id: 'reisepläne', text: 'Habe ich Reisepläne? Was möchte ich auf der Welt noch sehen? Wohin werde ich reisen?', type: 'text' },
-        { 
-          id: 'ehrenamt', 
-          text: 'Werde ich mich, wenn die Arbeit endet, ehrenamtlich engagieren? Wenn ja, was könnte ich mir vorstellen?', 
-          type: 'text' 
-        },
-        { id: 'traum', text: 'Gibt es darüber hinaus einen großen Traum oder einen Wunsch, den ich mir erfüllen möchte?', type: 'text' },
-        { id: 'ereignisse', text: 'Gibt es große Ereignisse, die ich noch feiern möchte? Jubiläen, Geburtstage?', type: 'text' },
-      ]
-    },
-    {
-      id: 'persönlichkeit',
-      title: 'PERSÖNLICHKEIT',
-      questions: [
-        { id: 'unlimitiert', text: 'Wer wäre ich, wenn ich unlimitierte Ressourcen und alle Freiheiten hätte?', type: 'text' },
-        { id: 'glück', text: 'Welche Dinge machen mich wirklich glücklich?', type: 'text' },
-        { id: 'kompetenz', text: 'Welche Dinge lassen mich mich kompetent und nützlich fühlen?', type: 'text' },
-        { id: 'befürchtung', text: 'Was ist meine schlimmste Befürchtung, wenn sich zu heute nichts ändert?', type: 'text' },
-        { id: 'zehnMillionen', text: 'Wenn ich zehn Millionen Euro hätte und wüsste, dass ich nur noch zehn Jahre zu leben hätte – was würde ich sofort anders machen?', type: 'text' },
-      ]
-    },
-    {
-      id: 'abschluss',
-      title: 'ABSCHLUSS',
-      questions: [
-        { 
-          id: 'sicherheit', 
-          text: 'Auf einer Skala von 1 bis 10: Wie hoch ist mein finanzielles Sicherheitsbedürfnis?', 
-          type: 'slider',
-          min: 1,
-          max: 10
-        },
-        { 
-          id: 'freiheit', 
-          text: 'Wie wichtig sind mir Freiheit und Flexibilität?', 
-          type: 'slider',
-          min: 1,
-          max: 10
-        },
-      ]
-    }
-  ];
-
-  // Funktion zum Aktualisieren der Antworten
-  const handleChange = (questionId, value) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: value
-    }));
-  };
-
-  // Funktion zum Navigieren zwischen den Schritten
-  const goToStep = (step) => {
-    if (step >= 0 && step < categories.length) {
-      setCurrentStep(step);
-    }
-  };
-
-  // Funktion zum Abschließen des Fragebogens und Anzeigen der Ergebnisse
-  const finishQuestionnaire = () => {
-    setShowResults(true);
-  };
-
-  // Funktion zur Analyse der Antworten und Generierung von Empfehlungen
-  const generateRecommendations = () => {
-    const recommendations = {
-      arbeit: [],
-      lebensmittelpunkt: [],
-      versorgung: [],
-      freizeit: [],
-      persönlichkeit: [],
-      allgemein: []
-    };
-
-    // Analysen für den Bereich ARBEIT
-    if (answers.stellenwert === 'Sehr hoch' || answers.stellenwert === 'Hoch') {
-      recommendations.arbeit.push('Karriereplanung scheint für Sie sehr wichtig zu sein. Investieren Sie in Ihre berufliche Weiterentwicklung und denken Sie über lebenslanges Lernen nach.');
-    }
-
-    if (answers.nochArbeiten === 'Nein, gar nicht mehr') {
-      recommendations.arbeit.push('Sie planen, die Arbeit vollständig aufzugeben. Stellen Sie sicher, dass Ihre finanzielle Planung diese Phase gut abdeckt.');
-    }
-
-    if (answers.durchstarten === 'Ja, definitiv' || answers.durchstarten === 'Wahrscheinlich') {
-      recommendations.arbeit.push('Überlegen Sie, welche Fähigkeiten und Ressourcen Sie für Ihr geplantes Unternehmen benötigen und beginnen Sie frühzeitig mit der Vorbereitung.');
-    }
-
-    if (answers.auszeit === 'Ja, definitiv' || answers.auszeit === 'Eventuell') {
-      recommendations.arbeit.push('Planen Sie Ihre Auszeit strategisch. Schaffen Sie finanzielle Reserven und klären Sie, wie sich diese Pause auf Ihre Altersvorsorge auswirken wird.');
-    }
-
-    // Analysen für den Bereich LEBENSMITTELPUNKT
-    if (answers.eigentum === 'Sehr wichtig' || answers.eigentum === 'Wichtig') {
-      recommendations.lebensmittelpunkt.push('Da Ihnen Eigentum wichtig ist, sollten Sie frühzeitig eine Immobilienfinanzierungsstrategie entwickeln, die zu Ihren Lebenszielen passt.');
-    }
-
-    if (answers.auswandern && answers.auswandern.toLowerCase() !== 'nein') {
-      recommendations.lebensmittelpunkt.push('Informieren Sie sich gründlich über die Lebenshaltungskosten, das Gesundheitssystem und die rechtlichen Aspekte im Zielland Ihrer Auswanderung.');
-    }
-
-    if (answers.eltern === 'Ja, definitiv' || answers.eltern === 'Möglicherweise') {
-      recommendations.lebensmittelpunkt.push('Die Pflege Ihrer Eltern kann emotional und finanziell herausfordernd sein. Planen Sie dafür entsprechende Ressourcen ein.');
-    }
-
-    // Analysen für den Bereich VERSORGUNG
-    if (answers.kinderUnterstützung && answers.kinderUnterstützung.toLowerCase().includes('ja')) {
-      recommendations.versorgung.push('Berücksichtigen Sie die finanzielle Unterstützung Ihrer Kinder in Ihrem langfristigen Budget und Ihrer Vermögensplanung.');
-    }
-
-    if (answers.immobilienÜbertragung === 'Ja, definitiv' || answers.immobilienÜbertragung === 'Eventuell') {
-      recommendations.versorgung.push('Konsultieren Sie einen Steuerberater oder Notar, um die optimale Strategie für die Immobilienübertragung zu finden.');
-    }
-
-    if (answers.spende && answers.spende.toLowerCase() !== 'nein') {
-      recommendations.versorgung.push('Informieren Sie sich über verschiedene Möglichkeiten der philanthropischen Planung, wie Stiftungen oder Spendenfonds.');
-    }
-
-    // Analysen für den Bereich FREIZEIT
-    if (answers.neueHobbys === 'Ja, definitiv' || answers.neueHobbys === 'Wahrscheinlich') {
-      recommendations.freizeit.push('Erforschen Sie neue Hobbys schon jetzt, um festzustellen, welche Ihnen langfristig Freude bereiten und in Ihre Zukunftsplanung passen.');
-    }
-
-    if (answers.ehrenamt && answers.ehrenamt.toLowerCase() !== 'nein') {
-      recommendations.freizeit.push('Ehrenamtliches Engagement kann im Ruhestand sehr erfüllend sein. Überlegen Sie, welche Fähigkeiten Sie einbringen können und welche Organisationen zu Ihren Werten passen.');
-    }
-
-    if (answers.reisepläne && answers.reisepläne.length > 10) {
-      recommendations.freizeit.push('Erstellen Sie einen zeitlichen und finanziellen Plan für Ihre Reisewünsche, um sicherzustellen, dass Sie all Ihre Traumziele erreichen können.');
-    }
-
-    // Analysen für den Bereich PERSÖNLICHKEIT
-    if (answers.zehnMillionen && answers.zehnMillionen.length > 10) {
-      recommendations.persönlichkeit.push('Die Dinge, die Sie sofort ändern würden, sollten auch ohne 10 Millionen Euro Priorität in Ihrem Leben haben. Überlegen Sie, wie Sie heute schon Schritte in diese Richtung machen können.');
-    }
-
-    if (answers.befürchtung && answers.befürchtung.length > 10) {
-      recommendations.persönlichkeit.push('Ihre Befürchtungen sind wichtige Indikatoren für Veränderungsbedarf. Entwickeln Sie einen Plan, um aktiv gegenzusteuern.');
-    }
-
-    // Analysen basierend auf den Abschlussfragen
-    if (answers.sicherheit >= 8) {
-      recommendations.allgemein.push('Ihr hohes Sicherheitsbedürfnis spricht für eine konservative Finanzplanung mit stabilen Anlagen und ausreichenden Reserven.');
-    } else if (answers.sicherheit <= 3) {
-      recommendations.allgemein.push('Mit Ihrem niedrigen Sicherheitsbedürfnis könnten Sie offener für Risiken in Ihrer Finanzplanung sein. Dennoch sollten gewisse Grundabsicherungen nicht vernachlässigt werden.');
-    }
-
-    if (answers.freiheit >= 8) {
-      recommendations.allgemein.push('Freiheit und Flexibilität sind Ihnen sehr wichtig. Bevorzugen Sie in Ihrer Planung Optionen, die Ihnen Wahlmöglichkeiten offen halten und nicht zu viele langfristige Verpflichtungen schaffen.');
-    }
-
-    // Allgemeine Empfehlungen
-    recommendations.allgemein.push('Überprüfen Sie Ihre Lebensplanung regelmäßig und passen Sie sie an veränderte Lebensumstände an.');
-    recommendations.allgemein.push('Sprechen Sie mit wichtigen Personen in Ihrem Leben über Ihre Pläne, um gemeinsame Visionen zu entwickeln und mögliche Konflikte frühzeitig zu erkennen.');
-
-    return recommendations;
-  };
-
-  // Generiere einen Persönlichkeitstyp basierend auf den Antworten
-  const generatePersonalityType = () => {
-    let type = "";
-    let description = "";
-
-    // Einfache Typengenerierung basierend auf Schlüsselantworten
-    if (answers.sicherheit >= 7 && answers.stellenwert === 'Sehr hoch') {
-      type = "Der Traditionalist";
-      description = "Sie legen Wert auf Sicherheit und strukturierte Karrierewege. Stabilität ist Ihnen wichtiger als Abenteuer, und Sie planen Ihr Leben vorausschauend.";
-    } else if (answers.freiheit >= 7 && (answers.durchstarten === 'Ja, definitiv' || answers.neueHobbys === 'Ja, definitiv')) {
-      type = "Der Entdecker";
-      description = "Sie sind offen für Neues und scheuen keine Veränderungen. Flexibilität und Selbstbestimmung sind Ihnen wichtiger als Sicherheit.";
-    } else if (answers.eigentum === 'Sehr wichtig' && answers.spende && answers.spende.toLowerCase() !== 'nein') {
-      type = "Der Gemeinschaftsorientierte";
-      description = "Sie legen Wert auf Besitz und materielle Sicherheit, möchten aber auch anderen etwas zurückgeben und zum Gemeinwohl beitragen.";
-    } else if (answers.ehrenamt && answers.ehrenamt.toLowerCase() !== 'nein' && answers.freiheit >= 5) {
-      type = "Der Idealistische Helfer";
-      description = "Sie möchten Ihre Fähigkeiten und Zeit für andere einsetzen, dabei aber Ihre persönliche Freiheit behalten.";
-    } else {
-      type = "Der Ausgewogene";
-      description = "Sie streben nach einer Balance zwischen verschiedenen Lebensbereichen und treffen Ihre Entscheidungen situativ und flexibel.";
-    }
-
-    return { type, description };
-  };
-
-  // Komponente zur Anzeige einer Frage
-  const renderQuestion = (question) => {
-    // Wenn die Frage nur angezeigt werden soll, wenn eine bestimmte andere Frage beantwortet wurde
-    if (question.conditional && 
-        (!answers[question.conditional] || 
-         answers[question.conditional] === 'Allein' || 
-         answers[question.conditional] === 'Nein')) {
-      return null;
-    }
-    
-    switch (question.type) {
-      case 'text':
-        return (
-          <div className="mb-4" key={question.id}>
-            <label className="block text-gray-700 text-sm font-bold mb-2">{question.text}</label>
-            <textarea
-              className="border rounded w-full py-2 px-3 text-gray-700"
-              value={answers[question.id] || ''}
-              onChange={(e) => handleChange(question.id, e.target.value)}
-              rows="3"
-            />
-          </div>
-        );
-      case 'select':
-        return (
-          <div className="mb-4" key={question.id}>
-            <label className="block text-gray-700 text-sm font-bold mb-2">{question.text}</label>
-            <select
-              className="border rounded w-full py-2 px-3 text-gray-700"
-              value={answers[question.id] || ''}
-              onChange={(e) => handleChange(question.id, e.target.value)}
-            >
-              <option value="">Bitte wählen</option>
-              {question.options.map(option => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
-          </div>
-        );
-      case 'slider':
-        return (
-          <div className="mb-4" key={question.id}>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              {question.text} ({answers[question.id] || question.min})
-            </label>
-            <input
-              type="range"
-              className="w-full"
-              min={question.min}
-              max={question.max}
-              value={answers[question.id] || question.min}
-              onChange={(e) => handleChange(question.id, parseInt(e.target.value))}
-            />
-            <div className="flex justify-between text-xs">
-              <span>Niedrig</span>
-              <span>Hoch</span>
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
-  // Render-Funktion für die aktuelle Kategorie
-  const renderCurrentCategory = () => {
-    const category = categories[currentStep];
-    return (
-      <div className="bg-white p-6 rounded shadow">
-        <h2 className="text-2xl font-bold mb-6">{category.title}</h2>
-        {category.questions.map(renderQuestion)}
-        <div className="flex justify-between mt-6">
-          {currentStep > 0 && (
-            <button
-              className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded"
-              onClick={() => goToStep(currentStep - 1)}
-            >
-              Zurück
-            </button>
-          )}
-          {currentStep < categories.length - 1 ? (
-            <button
-              className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded"
-              onClick={() => goToStep(currentStep + 1)}
-            >
-              Weiter
-            </button>
-          ) : (
-            <button
-              className="bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded"
-              onClick={finishQuestionnaire}
-            >
-              Fragebogen abschließen
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // Render-Funktion für die Auswertung
-  const renderResults = () => {
-    const recommendations = generateRecommendations();
-    const personality = generatePersonalityType();
-    
-    return (
-      <div className="bg-white p-6 rounded shadow">
-        <h2 className="text-2xl font-bold mb-6">Ihre persönliche Auswertung</h2>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Lebensplanung Tool - Plane deine Zukunft strukturiert und mit klaren Zielen">
+    <meta name="theme-color" content="#e2fe6c">
+    <title>Lebensplanung Tool - vorsorge.berlin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #e2fe6c;
+            --primary-dark: #c7e54a;
+            --secondary: #001d6c;
+            --secondary-light: #253c8a;
+            --light: #f5f7fa;
+            --dark: #121212;
+            --gray: #cfdbf7;
+            --gray-light: #edf0f7;
+            --transition: all 0.3s ease;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --container-padding: clamp(1rem, 5%, 2rem);
+            --section-spacing: 8rem;
+        }
         
-        <div className="mb-8">
-          <h3 className="text-xl font-semibold mb-4">Ihr Persönlichkeitsprofil: {personality.type}</h3>
-          <p className="mb-4">{personality.description}</p>
-          
-          <div className="bg-blue-50 p-4 rounded mb-4">
-            <h4 className="text-lg font-medium mb-2">Überblick Ihrer Antworten:</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p><strong>Sicherheitsbedürfnis:</strong> {answers.sicherheit}/10</p>
-                <p><strong>Freiheitsbedürfnis:</strong> {answers.freiheit}/10</p>
-                <p><strong>Stellenwert der Arbeit:</strong> {answers.stellenwert || "Keine Angabe"}</p>
-                <p><strong>Wohnwünsche:</strong> {answers.wohnort ? (answers.wohnort.length > 50 ? answers.wohnort.substring(0, 50) + "..." : answers.wohnort) : "Keine Angabe"}</p>
-              </div>
-              <div>
-                <p><strong>Langfristige Träume:</strong> {answers.traum ? (answers.traum.length > 50 ? answers.traum.substring(0, 50) + "..." : answers.traum) : "Keine Angabe"}</p>
-                <p><strong>Ruhestandspläne:</strong> {answers.ruhestand || "Keine Angabe"}</p>
-                <p><strong>Familiäre Pläne:</strong> {answers.lebensform || "Keine Angabe"}</p>
-                <p><strong>Ehrenamtliches Engagement:</strong> {answers.ehrenamt ? (answers.ehrenamt.length > 50 ? answers.ehrenamt.substring(0, 50) + "..." : answers.ehrenamt) : "Keine Angabe"}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         
-        <div className="mb-8">
-          <h3 className="text-xl font-semibold mb-4">Ihre Empfehlungen</h3>
-          
-          {Object.entries(recommendations).map(([category, recs]) => {
-            if (recs.length === 0) return null;
+        body {
+            color: var(--dark);
+            background-color: var(--light);
+            line-height: 1.6;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+        
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            line-height: 1.2;
+            margin-bottom: 0.5em;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+        
+        h1 {
+            font-size: clamp(2rem, 5vw, 2.75rem);
+        }
+        
+        h2 {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+        }
+        
+        h3 {
+            font-size: clamp(1.25rem, 3vw, 1.5rem);
+        }
+        
+        p {
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Layout */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--container-padding);
+        }
+
+        /* Form Container */
+        .form-container {
+            max-width: 800px;
+            margin: 3rem auto;
+            background-color: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: 2.5rem;
+            transition: var(--transition);
+        }
+
+        .form-title {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .form-title::after {
+            content: '';
+            position: absolute;
+            left: 25%;
+            bottom: 0;
+            width: 50%;
+            height: 4px;
+            background-color: var(--primary);
+            border-radius: 4px;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-bottom: 3rem;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            height: 4px;
+            width: 100%;
+            background-color: var(--gray-light);
+            z-index: 1;
+        }
+
+        .progress-line-active {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            height: 4px;
+            background-color: var(--primary);
+            z-index: 2;
+            transition: width 0.6s ease;
+        }
+
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--gray-light);
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            position: relative;
+            z-index: 3;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .step.active {
+            background-color: var(--primary);
+            box-shadow: 0 0 0 5px rgba(226, 254, 108, 0.3);
+        }
+
+        .step.completed {
+            background-color: var(--primary-dark);
+        }
+
+        .step-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+        }
+
+        .step-label {
+            font-size: 0.8rem;
+            text-align: center;
+            color: var(--dark);
+            font-weight: 500;
+            max-width: 120px;
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 1.8rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--secondary);
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .form-group input:focus, 
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(0,29,108,0.1);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* Range Input */
+        .range-container {
+            padding: 0 10px;
+        }
+
+        .range-input {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: var(--gray-light);
+            outline: none;
+            margin: 1rem 0;
+        }
+
+        .range-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--secondary);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .range-input::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-md);
+        }
+
+        .range-input::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--secondary);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .range-input::-moz-range-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-md);
+        }
+
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--secondary);
+        }
+
+        .range-value {
+            text-align: center;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 10px;
+        }
+
+        /* Navigation Buttons */
+        .form-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--secondary);
+            color: white;
+            padding: 0.9rem 1.75rem;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            text-align: center;
+            line-height: 1.4;
+            min-width: 160px;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: var(--transition);
+            z-index: -1;
+        }
+
+        .btn:hover {
+            background-color: var(--secondary-light);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn:hover::after {
+            height: 100%;
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:focus-visible {
+            outline: 3px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: var(--secondary);
+            border: 2px solid var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--gray-light);
+        }
+
+        .btn-primary {
+            background-color: var(--secondary);
+        }
+
+        .btn-primary-light {
+            background-color: var(--primary);
+            color: var(--secondary);
+        }
+
+        /* Results Section */
+        .results-container {
+            display: none;
+        }
+
+        .results-header {
+            background-color: var(--primary);
+            margin: -2.5rem -2.5rem 2rem;
+            padding: 2rem 2.5rem;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .personality-profile {
+            background-color: var(--light);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .personality-title {
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .personality-title::before {
+            content: '';
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: var(--primary);
+            margin-right: 10px;
+            border-radius: 50%;
+        }
+
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .overview-item {
+            background-color: white;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .overview-label {
+            font-weight: 600;
+            color: var(--secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .overview-value {
+            font-size: 1rem;
+        }
+
+        .recommendations-section {
+            margin-top: 2.5rem;
+        }
+
+        .recommendation-category {
+            margin-bottom: 1.5rem;
+        }
+
+        .category-title {
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .recommendation-list {
+            list-style-type: none;
+        }
+
+        .recommendation-item {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .recommendation-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.5rem;
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary);
+            border-radius: 50%;
+        }
+
+        .next-steps-section {
+            background-color: var(--light);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            margin-top: 2.5rem;
+        }
+
+        .steps-list {
+            counter-reset: steps-counter;
+            list-style-type: none;
+            padding-left: 2rem;
+        }
+
+        .step-item {
+            position: relative;
+            margin-bottom: 1rem;
+            counter-increment: steps-counter;
+        }
+
+        .step-item::before {
+            content: counter(steps-counter);
+            position: absolute;
+            left: -2rem;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--primary);
+            color: var(--secondary);
+            border-radius: 50%;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Form Tab Styles */
+        .form-tab {
+            display: none;
+        }
+
+        .form-tab.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 1.5rem;
+                margin: 1.5rem auto;
+            }
+
+            .results-header {
+                margin: -1.5rem -1.5rem 1.5rem;
+                padding: 1.5rem;
+            }
+
+            .step-labels {
+                display: none;
+            }
+
+            .step {
+                width: 32px;
+                height: 32px;
+                font-size: 0.9rem;
+            }
+
+            .btn {
+                min-width: 120px;
+                padding: 0.8rem 1.25rem;
+                font-size: 0.9rem;
+            }
+
+            .form-navigation {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .overview-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container" id="form-container">
+            <h1 class="form-title">Meine Lebensplanung</h1>
+
+            <!-- Progress Navigation -->
+            <div class="progress-container">
+                <div class="progress-steps">
+                    <div class="progress-line"></div>
+                    <div class="progress-line-active" id="progress-active"></div>
+                    <div class="step active" data-step="0">1</div>
+                    <div class="step" data-step="1">2</div>
+                    <div class="step" data-step="2">3</div>
+                    <div class="step" data-step="3">4</div>
+                    <div class="step" data-step="4">5</div>
+                    <div class="step" data-step="5">6</div>
+                </div>
+                <div class="step-labels">
+                    <div class="step-label">Arbeit</div>
+                    <div class="step-label">Lebensmittelpunkt</div>
+                    <div class="step-label">Versorgung</div>
+                    <div class="step-label">Freizeit</div>
+                    <div class="step-label">Persönlichkeit</div>
+                    <div class="step-label">Abschluss</div>
+                </div>
+            </div>
+
+            <!-- Form Tabs -->
+            <form id="lebensplanung-form">
+                <!-- ARBEIT Tab -->
+                <div class="form-tab active" data-category="arbeit">
+                    <h2>ARBEIT</h2>
+                    
+                    <div class="form-group">
+                        <label for="arbeit10">Welcher Arbeit möchte ich in 10 Jahren nachgehen?</label>
+                        <textarea id="arbeit10" name="arbeit10"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="arbeit20">Welcher Arbeit möchte ich in 20 Jahren nachgehen?</label>
+                        <textarea id="arbeit20" name="arbeit20"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="arbeit30">Welcher Arbeit möchte ich in 30 Jahren nachgehen?</label>
+                        <textarea id="arbeit30" name="arbeit30"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nochArbeiten">Will ich dann überhaupt noch arbeiten?</label>
+                        <select id="nochArbeiten" name="nochArbeiten">
+                            <option value="">Bitte wählen</option>
+                            <option value="Ja, Vollzeit">Ja, Vollzeit</option>
+                            <option value="Ja, Teilzeit">Ja, Teilzeit</option>
+                            <option value="Nur gelegentlich">Nur gelegentlich</option>
+                            <option value="Nein, gar nicht mehr">Nein, gar nicht mehr</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="stellenwert">Welchen Stellenwert soll Arbeit in meinem Leben haben?</label>
+                        <select id="stellenwert" name="stellenwert">
+                            <option value="">Bitte wählen</option>
+                            <option value="Sehr hoch">Sehr hoch</option>
+                            <option value="Hoch">Hoch</option>
+                            <option value="Ausgeglichen">Ausgeglichen</option>
+                            <option value="Niedrig">Niedrig</option>
+                            <option value="Sehr niedrig">Sehr niedrig</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ruhestand">Wann möchte ich in den Ruhestand gehen?</label>
+                        <input type="text" id="ruhestand" name="ruhestand">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="auszeit">Möchte ich schon vor dem Ruhestand eine längere Auszeit nehmen?</label>
+                        <select id="auszeit" name="auszeit">
+                            <option value="">Bitte wählen</option>
+                            <option value="Ja, definitiv">Ja, definitiv</option>
+                            <option value="Eventuell">Eventuell</option>
+                            <option value="Eher nicht">Eher nicht</option>
+                            <option value="Nein">Nein</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="durchstarten">Möchte ich noch einmal durchstarten, vielleicht sogar ein kleines Unternehmen oder ein Start-up gründen?</label>
+                        <select id="durchstarten" name="durchstarten">
+                            <option value="">Bitte wählen</option>
+                            <option value="Ja, definitiv">Ja, definitiv</option>
+                            <option value="Wahrscheinlich">Wahrscheinlich</option>
+                            <option value="Vielleicht">Vielleicht</option>
+                            <option value="Eher nicht">Eher nicht</option>
+                            <option value="Auf keinen Fall">Auf keinen Fall</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- LEBENSMITTELPUNKT Tab -->
+                <div class="form-tab" data-category="lebensmittelpunkt">
+                    <h2>LEBENSMITTELPUNKT</h2>
+                    
+                    <div class="form-group">
+                        <label for="wohnort">Wo möchte ich leben? Warum ausgerechnet dort?</label>
+                        <textarea id="wohnort" name="wohnort"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="auswandern">Kann ich mir vorstellen, das Land zu verlassen – auszuwandern – und wenn ja, wohin?</label>
+                        <textarea id="auswandern" name="auswandern"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="eigentum">Wie wichtig ist mir in den nächsten Jahren das Eigentum, also ein eigenes Haus oder eine eigene Wohnung?</label>
+                        <select id="eigentum" name="eigentum">
+                            <option value="">Bitte wählen</option>
+                            <option value="Sehr wichtig">Sehr wichtig</option>
+                            <option value="Wichtig">Wichtig</option>
+                            <option value="Neutral">Neutral</option>
+                            <option value="Weniger wichtig">Weniger wichtig</option>
+                            <option value="Unwichtig">Unwichtig</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lebensform">Wer lebt mit mir? Werde ich allein leben oder in einer Partnerschaft?</label>
+                        <select id="lebensform" name="lebensform">
+                            <option value="">Bitte wählen</option>
+                            <option value="Allein">Allein</option>
+                            <option value="Mit Partner/in">Mit Partner/in</option>
+                            <option value="Mit Familie">Mit Familie</option>
+                            <option value="In einer Wohngemeinschaft">In einer Wohngemeinschaft</option>
+                            <option value="Anders">Anders</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group partner-related">
+                        <label for="partnerAlter">Wie alt wird meine Partnerin, mein Partner sein?</label>
+                        <input type="text" id="partnerAlter" name="partnerAlter">
+                    </div>
+                    
+                    <div class="form-group partner-related">
+                        <label for="partnerTätigkeit">Was wird sie oder er machen?</label>
+                        <input type="text" id="partnerTätigkeit" name="partnerTätigkeit">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="kinder">Wenn ich Kinder habe, was werden die machen? Sollen sie mit mir leben?</label>
+                        <textarea id="kinder" name="kinder"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="enkelkinder">Werde ich mich auch um Enkelkinder kümmern?</label>
+                        <select id="enkelkinder" name="enkelkinder">
+                            <option value="">Bitte wählen</option>
+                            <option value="Ja, intensiv">Ja, intensiv</option>
+                            <option value="Gelegentlich">Gelegentlich</option>
+                            <option value="Eher nicht">Eher nicht</option>
+                            <option value="Nein">Nein</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="eltern">Und was ist mit meinen Eltern, werden die mit mir leben?</label>
+                        <select id="eltern" name="eltern">
+                            <option value="">Bitte wählen</option>
+                            <option value="Ja, definitiv">Ja, definitiv</option>
+                            <option value="Möglicherweise">Möglicherweise</option>
+                            <option value="Eher nicht">Eher nicht</option>
+                            <option value="Auf keinen Fall">Auf keinen Fall</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="haustiere">Habe ich Haustiere?</label>
+                        <select id="haustiere" name="haustiere">
+                            <option value="">Bitte wählen</option>
+                            <option value="Ja, mehrere">Ja, mehrere</option>
+                            <option value="Ja, eines">Ja, eines</option>
+                            <option value="Noch nicht, aber geplant">Noch nicht, aber geplant</option>
+                            <option value="Nein">Nein</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- VERSORGUNG Tab -->
+                <div class="form-tab" data-category="versorgung">
+                    <h2>VERSORGUNG</h2>
+                    
+                    <div class="form-group">
+                        <label for="unterstützung">Wenn ich an die nächsten 10 bis 20 Jahre denke, wen möchte ich unterstützt sehen?</label>
+                        <textarea id="unterstützung" name="unterstützung"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="kinderUnterstützung">Werde ich meine Kinder unterstützen? Werde ich z. B. ihre Ausbildung finanzieren?</label>
+                        <textarea id="kinderUnterstützung" name="kinderUnterstützung"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="eigenständigkeit">Wann, glaube ich, werden meine Kinder auf eigenen Füßen stehen?</label>
+                        <input type="text" id="eigenständigkeit" name="eigenständigkeit">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="schenkungen">Plane ich Schenkungen an meine Kinder?</label>
+                        <select id="schenkungen" name="schenkungen">
+                            <option value="">Bitte wählen</option>
+                            <option value="Ja, umfangreich">Ja, umfangreich</option>
+                            <option value="Ja, moderat">Ja, moderat</option>
+                            <option value="Nur bei Bedarf">Nur bei Bedarf</option>
+                            <option value="Eher nicht">Eher nicht</option>
+                            <option value="Nein">Nein</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="immobilienÜbertragung">Gibt es die Überlegung, meinen Kindern eine Immobilie zu übertragen?</label>
+                        <select id="immobilienÜbertragung" name="immobilienÜbertragung">
+                            <option value="">Bitte wählen</option>
+                            <option value="Ja, definitiv">Ja, definitiv</option>
+                            <option value="Eventuell">Eventuell</option>
+                            <option value="Eher nicht">Eher nicht</option>
+                            <option value="Nein">Nein</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="pflege">Wie und wo möchte ich im Alter gepflegt werden?</label>
+                        <textarea id="pflege" name="pflege"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="altersruhesitz">Habe ich schon so etwas wie einen Altersruhesitz im Auge?</label>
+                        <input type="text" id="altersruhesitz" name="altersruhesitz">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="erbe">Wem möchte ich mein Vermögen vererben? Jemanden innerhalb oder außerhalb der Familie?</label>
+                        <textarea id="erbe" name="erbe"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="spende">Will ich mit meinem Erbe eine gemeinnützige Organisation unterstützen? Wenn ja, wie hoch soll diese Unterstützung sein?</label>
+                        <textarea id="spende" name="spende"></textarea>
+                    </div>
+                </div>
+
+                <!-- FREIZEIT Tab -->
+                <div class="form-tab" data-category="freizeit">
+                    <h2>FREIZEIT</h2>
+                    
+                    <div class="form-group">
+                        <label for="hobbys">Wie sieht meine Freizeit aus? Welchen Hobbys möchte ich nachgehen?</label>
+                        <textarea id="hobbys" name="hobbys"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="neueHobbys">Möchte ich mich neuen Hobbys widmen?</label>
+                        <select id="neueHobbys" name="neueHobbys">
+                            <option value="">Bitte wählen</option>
+                            <option value="Ja, definitiv">Ja, definitiv</option>
+                            <option value="Wahrscheinlich">Wahrscheinlich</option>
+                            <option value="Vielleicht">Vielleicht</option>
+                            <option value="Eher nicht">Eher nicht</option>
+                            <option value="Nein">Nein</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reisepläne">Habe ich Reisepläne? Was möchte ich auf der Welt noch sehen? Wohin werde ich reisen?</label>
+                        <textarea id="reisepläne" name="reisepläne"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ehrenamt">Werde ich mich, wenn die Arbeit endet, ehrenamtlich engagieren? Wenn ja, was könnte ich mir vorstellen?</label>
+                        <textarea id="ehrenamt" name="ehrenamt"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="traum">Gibt es darüber hinaus einen großen Traum oder einen Wunsch, den ich mir erfüllen möchte?</label>
+                        <textarea id="traum" name="traum"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ereignisse">Gibt es große Ereignisse, die ich noch feiern möchte? Jubiläen, Geburtstage?</label>
+                        <textarea id="ereignisse" name="ereignisse"></textarea>
+                    </div>
+                </div>
+
+                <!-- PERSÖNLICHKEIT Tab -->
+                <div class="form-tab" data-category="persönlichkeit">
+                    <h2>PERSÖNLICHKEIT</h2>
+                    
+                    <div class="form-group">
+                        <label for="unlimitiert">Wer wäre ich, wenn ich unlimitierte Ressourcen und alle Freiheiten hätte?</label>
+                        <textarea id="unlimitiert" name="unlimitiert"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="glück">Welche Dinge machen mich wirklich glücklich?</label>
+                        <textarea id="glück" name="glück"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="kompetenz">Welche Dinge lassen mich mich kompetent und nützlich fühlen?</label>
+                        <textarea id="kompetenz" name="kompetenz"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="befürchtung">Was ist meine schlimmste Befürchtung, wenn sich zu heute nichts ändert?</label>
+                        <textarea id="befürchtung" name="befürchtung"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="zehnMillionen">Wenn ich zehn Millionen Euro hätte und wüsste, dass ich nur noch zehn Jahre zu leben hätte – was würde ich sofort anders machen?</label>
+                        <textarea id="zehnMillionen" name="zehnMillionen"></textarea>
+                    </div>
+                </div>
+
+                <!-- ABSCHLUSS Tab -->
+                <div class="form-tab" data-category="abschluss">
+                    <h2>ABSCHLUSS</h2>
+                    
+                    <div class="form-group">
+                        <label for="sicherheit">Auf einer Skala von 1 bis 10: Wie hoch ist mein finanzielles Sicherheitsbedürfnis?</label>
+                        <div class="range-value">Wert: <span id="sicherheit-value">5</span></div>
+                        <div class="range-container">
+                            <input type="range" id="sicherheit" name="sicherheit" min="1" max="10" value="5" class="range-input">
+                            <div class="range-labels">
+                                <span>Niedrig</span>
+                                <span>Hoch</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="freiheit">Wie wichtig sind mir Freiheit und Flexibilität?</label>
+                        <div class="range-value">Wert: <span id="freiheit-value">5</span></div>
+                        <div class="range-container">
+                            <input type="range" id="freiheit" name="freiheit" min="1" max="10" value="5" class="range-input">
+                            <div class="range-labels">
+                                <span>Niedrig</span>
+                                <span>Hoch</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Navigation -->
+                <div class="form-navigation">
+                    <button type="button" id="prev-btn" class="btn btn-secondary">Zurück</button>
+                    <button type="button" id="next-btn" class="btn btn-primary">Weiter</button>
+                </div>
+            </form>
+
+            <!-- Results Container -->
+            <div class="results-container" id="results-container">
+                <div class="results-header">
+                    <h2>Ihre persönliche Auswertung</h2>
+                </div>
+
+                <div class="personality-profile">
+                    <h3 class="personality-title" id="personality-type">Persönlichkeitsprofil: Der Ausgewogene</h3>
+                    <p id="personality-description">Sie streben nach einer Balance zwischen verschiedenen Lebensbereichen und treffen Ihre Entscheidungen situativ und flexibel.</p>
+                </div>
+
+                <h3>Überblick Ihrer Antworten</h3>
+                <div class="overview-grid" id="answers-overview">
+                    <!-- Will be filled dynamically by JavaScript -->
+                </div>
+
+                <div class="recommendations-section">
+                    <h3>Ihre Empfehlungen</h3>
+                    <div id="recommendations-container">
+                        <!-- Will be filled dynamically by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="next-steps-section">
+                    <h3>Nächste Schritte</h3>
+                    <ul class="steps-list">
+                        <li class="step-item">Reflektieren Sie die Ergebnisse und diskutieren Sie diese mit Ihren engsten Vertrauten.</li>
+                        <li class="step-item">Formulieren Sie konkrete Ziele für die nächsten 1, 5 und 10 Jahre.</li>
+                        <li class="step-item">Überprüfen Sie Ihre finanzielle Situation und stimmen Sie diese auf Ihre Lebensziele ab.</li>
+                        <li class="step-item">Suchen Sie bei Bedarf professionelle Unterstützung, z.B. in Finanz- oder Karrierefragen.</li>
+                        <li class="step-item">Wiederholen Sie diese Übung regelmäßig (z.B. jährlich), um Ihre Fortschritte zu verfolgen und Anpassungen vorzunehmen.</li>
+                    </ul>
+                </div>
+
+                <div class="form-navigation">
+                    <button type="button" id="back-to-form" class="btn btn-secondary">Zurück zum Fragebogen</button>
+                    <button type="button" id="save-results" class="btn btn-primary-light">Ergebnisse speichern</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const form = document.getElementById('lebensplanung-form');
+            const formTabs = document.querySelectorAll('.form-tab');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const steps = document.querySelectorAll('.step');
+            const progressActive = document.getElementById('progress-active');
+            const resultsContainer = document.getElementById('results-container');
+            const formContainer = document.getElementById('form-container');
+            const backToFormBtn = document.getElementById('back-to-form');
+            const saveResultsBtn = document.getElementById('save-results');
+            const rangeInputs = document.querySelectorAll('input[type="range"]');
+            const partnerRelatedFields = document.querySelectorAll('.partner-related');
+            const lebensformField = document.getElementById('lebensform');
+
+            // State
+            let currentStep = 0;
+            const answers = {};
             
-            let categoryTitle;
-            switch(category) {
-              case 'arbeit': categoryTitle = "Berufliche Entwicklung"; break;
-              case 'lebensmittelpunkt': categoryTitle = "Wohn- und Lebenssituation"; break;
-              case 'versorgung': categoryTitle = "Vorsorge und Vermögensplanung"; break;
-              case 'freizeit': categoryTitle = "Freizeitgestaltung"; break;
-              case 'persönlichkeit': categoryTitle = "Persönliche Entwicklung"; break;
-              case 'allgemein': categoryTitle = "Allgemeine Empfehlungen"; break;
-              default: categoryTitle = category;
+            // Initialize
+            updateUI();
+            updatePartnerFields();
+            
+            // Event Listeners
+            steps.forEach(step => {
+                step.addEventListener('click', () => {
+                    currentStep = parseInt(step.dataset.step);
+                    updateUI();
+                });
+            });
+            
+            prevBtn.addEventListener('click', () => {
+                if (currentStep > 0) {
+                    currentStep--;
+                    updateUI();
+                }
+            });
+            
+            nextBtn.addEventListener('click', () => {
+                const currentTab = formTabs[currentStep];
+                
+                // Save answers from current tab
+                const inputs = currentTab.querySelectorAll('input, textarea, select');
+                inputs.forEach(input => {
+                    answers[input.id] = input.value;
+                });
+                
+                if (currentStep < formTabs.length - 1) {
+                    currentStep++;
+                    updateUI();
+                } else {
+                    // Show results
+                    showResults();
+                }
+            });
+            
+            backToFormBtn.addEventListener('click', () => {
+                resultsContainer.style.display = 'none';
+                form.style.display = 'block';
+                currentStep = 0;
+                updateUI();
+            });
+            
+            saveResultsBtn.addEventListener('click', () => {
+                alert('Die Ergebnisse würden hier als PDF heruntergeladen oder per E-Mail versendet werden.');
+            });
+            
+            // Range input event handlers
+            rangeInputs.forEach(input => {
+                const valueDisplay = document.getElementById(`${input.id}-value`);
+                
+                input.addEventListener('input', () => {
+                    valueDisplay.textContent = input.value;
+                    answers[input.id] = input.value;
+                });
+            });
+            
+            // Conditional fields for partner-related questions
+            lebensformField.addEventListener('change', updatePartnerFields);
+            
+            // Functions
+            function updateUI() {
+                // Update tab visibility
+                formTabs.forEach((tab, index) => {
+                    if (index === currentStep) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
+                
+                // Update step indicators
+                steps.forEach((step, index) => {
+                    if (index === currentStep) {
+                        step.classList.add('active');
+                    } else {
+                        step.classList.remove('active');
+                    }
+                    
+                    if (index < currentStep) {
+                        step.classList.add('completed');
+                    } else {
+                        step.classList.remove('completed');
+                    }
+                });
+                
+                // Update progress bar
+                const progressWidth = (currentStep / (steps.length - 1)) * 100;
+                progressActive.style.width = `${progressWidth}%`;
+                
+                // Update buttons
+                if (currentStep === 0) {
+                    prevBtn.style.visibility = 'hidden';
+                } else {
+                    prevBtn.style.visibility = 'visible';
+                }
+                
+                if (currentStep === formTabs.length - 1) {
+                    nextBtn.textContent = 'Fragebogen abschließen';
+                } else {
+                    nextBtn.textContent = 'Weiter';
+                }
             }
             
-            return (
-              <div key={category} className="mb-4">
-                <h4 className="text-lg font-medium mb-2">{categoryTitle}</h4>
-                <ul className="list-disc pl-6">
-                  {recs.map((rec, index) => (
-                    <li key={index} className="mb-1">{rec}</li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
-        
-        <div className="mb-8">
-          <h3 className="text-xl font-semibold mb-4">Nächste Schritte</h3>
-          <ol className="list-decimal pl-6">
-            <li className="mb-2">Reflektieren Sie die Ergebnisse und diskutieren Sie diese mit Ihren engsten Vertrauten.</li>
-            <li className="mb-2">Formulieren Sie konkrete Ziele für die nächsten 1, 5 und 10 Jahre.</li>
-            <li className="mb-2">Überprüfen Sie Ihre finanzielle Situation und stimmen Sie diese auf Ihre Lebensziele ab.</li>
-            <li className="mb-2">Suchen Sie bei Bedarf professionelle Unterstützung, z.B. in Finanz- oder Karrierefragen.</li>
-            <li className="mb-2">Wiederholen Sie diese Übung regelmäßig (z.B. jährlich), um Ihre Fortschritte zu verfolgen und Anpassungen vorzunehmen.</li>
-          </ol>
-        </div>
-        
-        <div className="flex justify-between mt-6">
-          <button
-            className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded"
-            onClick={() => {
-              setShowResults(false);
-              setCurrentStep(0);
-            }}
-          >
-            Zurück zum Fragebogen
-          </button>
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded"
-            onClick={() => {
-              alert("Funktion zum Drucken oder Speichern würde hier implementiert werden.");
-            }}
-          >
-            Ergebnisse speichern
-          </button>
-        </div>
-      </div>
-    );
-  };
+            function updatePartnerFields() {
+                const selectedValue = lebensformField.value;
+                const showPartnerFields = selectedValue === 'Mit Partner/in' || selectedValue === 'Mit Familie';
+                
+                partnerRelatedFields.forEach(field => {
+                    if (showPartnerFields) {
+                        field.style.display = 'block';
+                    } else {
+                        field.style.display = 'none';
+                    }
+                });
+            }
+            
+            function showResults() {
+                // Save answers from the last tab
+                const currentTab = formTabs[currentStep];
+                const inputs = currentTab.querySelectorAll('input, textarea, select');
+                inputs.forEach(input => {
+                    answers[input.id] = input.value;
+                });
+                
+                // Generate results
+                generatePersonalityProfile();
+                generateOverview();
+                generateRecommendations();
+                
+                // Show results container
+                form.style.display = 'none';
+                resultsContainer.style.display = 'block';
+                
+                // Scroll to top
+                formContainer.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            function generatePersonalityProfile() {
+                let type = "";
+                let description = "";
 
-  return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-3xl font-bold text-center mb-8">Meine Lebensplanung</h1>
-      
-      {!showResults ? (
-        <div>
-          <div className="mb-8">
-            <div className="flex items-center">
-              {categories.map((category, index) => (
-                <React.Fragment key={category.id}>
-                  <div 
-                    className={`w-10 h-10 flex items-center justify-center rounded-full cursor-pointer ${currentStep === index ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-                    onClick={() => goToStep(index)}
-                  >
-                    {index + 1}
-                  </div>
-                  {index < categories.length - 1 && (
-                    <div className="h-1 flex-1 bg-gray-200"></div>
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-            <div className="flex justify-between mt-2 text-sm text-gray-600">
-              <div>{categories[0].title}</div>
-              <div className="text-right">{categories[categories.length-1].title}</div>
-            </div>
-          </div>
-          
-          {renderCurrentCategory()}
-        </div>
-      ) : (
-        renderResults()
-      )}
-    </div>
-  );
-};
+                // Simple type generation based on key answers
+                if (answers.sicherheit >= 7 && answers.stellenwert === 'Sehr hoch') {
+                    type = "Der Traditionalist";
+                    description = "Sie legen Wert auf Sicherheit und strukturierte Karrierewege. Stabilität ist Ihnen wichtiger als Abenteuer, und Sie planen Ihr Leben vorausschauend.";
+                } else if (answers.freiheit >= 7 && (answers.durchstarten === 'Ja, definitiv' || answers.neueHobbys === 'Ja, definitiv')) {
+                    type = "Der Entdecker";
+                    description = "Sie sind offen für Neues und scheuen keine Veränderungen. Flexibilität und Selbstbestimmung sind Ihnen wichtiger als Sicherheit.";
+                } else if (answers.eigentum === 'Sehr wichtig' && answers.spende && answers.spende.toLowerCase() !== 'nein') {
+                    type = "Der Gemeinschaftsorientierte";
+                    description = "Sie legen Wert auf Besitz und materielle Sicherheit, möchten aber auch anderen etwas zurückgeben und zum Gemeinwohl beitragen.";
+                } else if (answers.ehrenamt && answers.ehrenamt.toLowerCase() !== 'nein' && answers.freiheit >= 5) {
+                    type = "Der Idealistische Helfer";
+                    description = "Sie möchten Ihre Fähigkeiten und Zeit für andere einsetzen, dabei aber Ihre persönliche Freiheit behalten.";
+                } else {
+                    type = "Der Ausgewogene";
+                    description = "Sie streben nach einer Balance zwischen verschiedenen Lebensbereichen und treffen Ihre Entscheidungen situativ und flexibel.";
+                }
 
-export default LebensplanungFormular;
+                document.getElementById('personality-type').textContent = `Persönlichkeitsprofil: ${type}`;
+                document.getElementById('personality-description').textContent = description;
+            }
+            
+            function generateOverview() {
+                const overviewContainer = document.getElementById('answers-overview');
+                overviewContainer.innerHTML = '';
+                
+                // Define key answers to show in overview
+                const keyAnswers = [
+                    { id: 'sicherheit', label: 'Sicherheitsbedürfnis', format: (value) => `${value}/10` },
+                    { id: 'freiheit', label: 'Freiheitsbedürfnis', format: (value) => `${value}/10` },
+                    { id: 'stellenwert', label: 'Stellenwert der Arbeit', format: (value) => value || 'Keine Angabe' },
+                    { id: 'wohnort', label: 'Wohnwünsche', format: (value) => formatText(value, 50) },
+                    { id: 'traum', label: 'Langfristige Träume', format: (value) => formatText(value, 50) },
+                    { id: 'ruhestand', label: 'Ruhestandspläne', format: (value) => value || 'Keine Angabe' },
+                    { id: 'lebensform', label: 'Familiäre Pläne', format: (value) => value || 'Keine Angabe' },
+                    { id: 'ehrenamt', label: 'Ehrenamtliches Engagement', format: (value) => formatText(value, 50) }
+                ];
+                
+                keyAnswers.forEach(item => {
+                    const overviewItem = document.createElement('div');
+                    overviewItem.className = 'overview-item';
+                    
+                    const label = document.createElement('div');
+                    label.className = 'overview-label';
+                    label.textContent = item.label;
+                    
+                    const value = document.createElement('div');
+                    value.className = 'overview-value';
+                    value.textContent = item.format(answers[item.id]);
+                    
+                    overviewItem.appendChild(label);
+                    overviewItem.appendChild(value);
+                    overviewContainer.appendChild(overviewItem);
+                });
+            }
+            
+            function formatText(text, maxLength) {
+                if (!text) return 'Keine Angabe';
+                return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+            }
+            
+            function generateRecommendations() {
+                const recommendationsContainer = document.getElementById('recommendations-container');
+                recommendationsContainer.innerHTML = '';
+                
+                // Generate recommendations
+                const recommendations = {
+                    arbeit: [],
+                    lebensmittelpunkt: [],
+                    versorgung: [],
+                    freizeit: [],
+                    persönlichkeit: [],
+                    allgemein: []
+                };
+
+                // Analysen für den Bereich ARBEIT
+                if (answers.stellenwert === 'Sehr hoch' || answers.stellenwert === 'Hoch') {
+                    recommendations.arbeit.push('Karriereplanung scheint für Sie sehr wichtig zu sein. Investieren Sie in Ihre berufliche Weiterentwicklung und denken Sie über lebenslanges Lernen nach.');
+                }
+
+                if (answers.nochArbeiten === 'Nein, gar nicht mehr') {
+                    recommendations.arbeit.push('Sie planen, die Arbeit vollständig aufzugeben. Stellen Sie sicher, dass Ihre finanzielle Planung diese Phase gut abdeckt.');
+                }
+
+                if (answers.durchstarten === 'Ja, definitiv' || answers.durchstarten === 'Wahrscheinlich') {
+                    recommendations.arbeit.push('Überlegen Sie, welche Fähigkeiten und Ressourcen Sie für Ihr geplantes Unternehmen benötigen und beginnen Sie frühzeitig mit der Vorbereitung.');
+                }
+
+                if (answers.auszeit === 'Ja, definitiv' || answers.auszeit === 'Eventuell') {
+                    recommendations.arbeit.push('Planen Sie Ihre Auszeit strategisch. Schaffen Sie finanzielle Reserven und klären Sie, wie sich diese Pause auf Ihre Altersvorsorge auswirken wird.');
+                }
+
+                // Analysen für den Bereich LEBENSMITTELPUNKT
+                if (answers.eigentum === 'Sehr wichtig' || answers.eigentum === 'Wichtig') {
+                    recommendations.lebensmittelpunkt.push('Da Ihnen Eigentum wichtig ist, sollten Sie frühzeitig eine Immobilienfinanzierungsstrategie entwickeln, die zu Ihren Lebenszielen passt.');
+                }
+
+                if (answers.auswandern && answers.auswandern.toLowerCase() !== 'nein') {
+                    recommendations.lebensmittelpunkt.push('Informieren Sie sich gründlich über die Lebenshaltungskosten, das Gesundheitssystem und die rechtlichen Aspekte im Zielland Ihrer Auswanderung.');
+                }
+
+                if (answers.eltern === 'Ja, definitiv' || answers.eltern === 'Möglicherweise') {
+                    recommendations.lebensmittelpunkt.push('Die Pflege Ihrer Eltern kann emotional und finanziell herausfordernd sein. Planen Sie dafür entsprechende Ressourcen ein.');
+                }
+
+                // Analysen für den Bereich VERSORGUNG
+                if (answers.kinderUnterstützung && answers.kinderUnterstützung.toLowerCase().includes('ja')) {
+                    recommendations.versorgung.push('Berücksichtigen Sie die finanzielle Unterstützung Ihrer Kinder in Ihrem langfristigen Budget und Ihrer Vermögensplanung.');
+                }
+
+                if (answers.immobilienÜbertragung === 'Ja, definitiv' || answers.immobilienÜbertragung === 'Eventuell') {
+                    recommendations.versorgung.push('Konsultieren Sie einen Steuerberater oder Notar, um die optimale Strategie für die Immobilienübertragung zu finden.');
+                }
+
+                if (answers.spende && answers.spende.toLowerCase() !== 'nein') {
+                    recommendations.versorgung.push('Informieren Sie sich über verschiedene Möglichkeiten der philanthropischen Planung, wie Stiftungen oder Spendenfonds.');
+                }
+
+                // Analysen für den Bereich FREIZEIT
+                if (answers.neueHobbys === 'Ja, definitiv' || answers.neueHobbys === 'Wahrscheinlich') {
+                    recommendations.freizeit.push('Erforschen Sie neue Hobbys schon jetzt, um festzustellen, welche Ihnen langfristig Freude bereiten und in Ihre Zukunftsplanung passen.');
+                }
+
+                if (answers.ehrenamt && answers.ehrenamt.toLowerCase() !== 'nein') {
+                    recommendations.freizeit.push('Ehrenamtliches Engagement kann im Ruhestand sehr erfüllend sein. Überlegen Sie, welche Fähigkeiten Sie einbringen können und welche Organisationen zu Ihren Werten passen.');
+                }
+
+                if (answers.reisepläne && answers.reisepläne.length > 10) {
+                    recommendations.freizeit.push('Erstellen Sie einen zeitlichen und finanziellen Plan für Ihre Reisewünsche, um sicherzustellen, dass Sie all Ihre Traumziele erreichen können.');
+                }
+
+                // Analysen für den Bereich PERSÖNLICHKEIT
+                if (answers.zehnMillionen && answers.zehnMillionen.length > 10) {
+                    recommendations.persönlichkeit.push('Die Dinge, die Sie sofort ändern würden, sollten auch ohne 10 Millionen Euro Priorität in Ihrem Leben haben. Überlegen Sie, wie Sie heute schon Schritte in diese Richtung machen können.');
+                }
+
+                if (answers.befürchtung && answers.befürchtung.length > 10) {
+                    recommendations.persönlichkeit.push('Ihre Befürchtungen sind wichtige Indikatoren für Veränderungsbedarf. Entwickeln Sie einen Plan, um aktiv gegenzusteuern.');
+                }
+
+                // Analysen basierend auf den Abschlussfragen
+                if (answers.sicherheit >= 8) {
+                    recommendations.allgemein.push('Ihr hohes Sicherheitsbedürfnis spricht für eine konservative Finanzplanung mit stabilen Anlagen und ausreichenden Reserven.');
+                } else if (answers.sicherheit <= 3) {
+                    recommendations.allgemein.push('Mit Ihrem niedrigen Sicherheitsbedürfnis könnten Sie offener für Risiken in Ihrer Finanzplanung sein. Dennoch sollten gewisse Grundabsicherungen nicht vernachlässigt werden.');
+                }
+
+                if (answers.freiheit >= 8) {
+                    recommendations.allgemein.push('Freiheit und Flexibilität sind Ihnen sehr wichtig. Bevorzugen Sie in Ihrer Planung Optionen, die Ihnen Wahlmöglichkeiten offen halten und nicht zu viele langfristige Verpflichtungen schaffen.');
+                }
+
+                // Allgemeine Empfehlungen
+                recommendations.allgemein.push('Überprüfen Sie Ihre Lebensplanung regelmäßig und passen Sie sie an veränderte Lebensumstände an.');
+                recommendations.allgemein.push('Sprechen Sie mit wichtigen Personen in Ihrem Leben über Ihre Pläne, um gemeinsame Visionen zu entwickeln und mögliche Konflikte frühzeitig zu erkennen.');
+
+                // Create recommendation elements
+                const categoryTitles = {
+                    arbeit: "Berufliche Entwicklung",
+                    lebensmittelpunkt: "Wohn- und Lebenssituation",
+                    versorgung: "Vorsorge und Vermögensplanung",
+                    freizeit: "Freizeitgestaltung",
+                    persönlichkeit: "Persönliche Entwicklung",
+                    allgemein: "Allgemeine Empfehlungen"
+                };
+                
+                Object.entries(recommendations).forEach(([category, recs]) => {
+                    if (recs.length === 0) return;
+                    
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.className = 'recommendation-category';
+                    
+                    const categoryTitle = document.createElement('h4');
+                    categoryTitle.className = 'category-title';
+                    categoryTitle.textContent = categoryTitles[category];
+                    
+                    const recommendationList = document.createElement('ul');
+                    recommendationList.className = 'recommendation-list';
+                    
+                    recs.forEach(rec => {
+                        const item = document.createElement('li');
+                        item.className = 'recommendation-item';
+                        item.textContent = rec;
+                        recommendationList.appendChild(item);
+                    });
+                    
+                    categoryDiv.appendChild(categoryTitle);
+                    categoryDiv.appendChild(recommendationList);
+                    recommendationsContainer.appendChild(categoryDiv);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
