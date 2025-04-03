@@ -9,6 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- PDF Export Bibliotheken -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --primary: #e2fe6c;
@@ -28,6 +31,7 @@
             --radius-lg: 12px;
             --container-padding: clamp(1rem, 5%, 2rem);
             --section-spacing: 8rem;
+            --success: #4CAF50;
         }
         
         * {
@@ -549,10 +553,64 @@
                 grid-template-columns: 1fr;
             }
         }
+        
+        /* Save Notification */
+        .save-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--success);
+            color: white;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 1000;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        
+        .save-notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .save-notification::before {
+            content: '✓';
+            display: inline-block;
+            margin-right: 8px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        /* PDF Export styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #results-container, #results-container * {
+                visibility: visible;
+            }
+            #results-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .form-navigation {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Save notification -->
+        <div class="save-notification" id="save-notification">Änderungen automatisch gespeichert</div>
+        
         <div class="form-container" id="form-container">
             <h1 class="form-title">Meine Lebensplanung</h1>
 
@@ -967,10 +1025,15 @@
             const rangeInputs = document.querySelectorAll('input[type="range"]');
             const partnerRelatedFields = document.querySelectorAll('.partner-related');
             const lebensformField = document.getElementById('lebensform');
+            const saveNotification = document.getElementById('save-notification');
 
             // State
             let currentStep = 0;
             const answers = {};
+            const STORAGE_KEY = 'lebensplanung_data';
+            
+            // Lade gespeicherte Daten, wenn vorhanden
+            loadSavedData();
             
             // Initialize
             updateUI();
@@ -1000,6 +1063,9 @@
                     answers[input.id] = input.value;
                 });
                 
+                // Speichere die Daten
+                saveData();
+                
                 if (currentStep < formTabs.length - 1) {
                     currentStep++;
                     updateUI();
@@ -1017,7 +1083,7 @@
             });
             
             saveResultsBtn.addEventListener('click', () => {
-                alert('Die Ergebnisse würden hier als PDF heruntergeladen oder per E-Mail versendet werden.');
+                generatePDF();
             });
             
             // Range input event handlers
@@ -1027,7 +1093,30 @@
                 input.addEventListener('input', () => {
                     valueDisplay.textContent = input.value;
                     answers[input.id] = input.value;
+                    saveData();
                 });
+            });
+            
+            // Autosave für alle Formularfelder
+            form.addEventListener('change', function(e) {
+                const target = e.target;
+                if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+                    answers[target.id] = target.value;
+                    saveData();
+                }
+            });
+            
+            // Autosave für Textarea bei Eingabe
+            form.addEventListener('input', function(e) {
+                const target = e.target;
+                if (target.tagName === 'TEXTAREA') {
+                    answers[target.id] = target.value;
+                    // Verzögerte Speicherung, um nicht bei jedem Tastenanschlag zu speichern
+                    clearTimeout(target.saveTimeout);
+                    target.saveTimeout = setTimeout(() => {
+                        saveData();
+                    }, 1000);
+                }
             });
             
             // Conditional fields for partner-related questions
@@ -1097,6 +1186,9 @@
                 inputs.forEach(input => {
                     answers[input.id] = input.value;
                 });
+                
+                // Save final data
+                saveData();
                 
                 // Generate results
                 generatePersonalityProfile();
@@ -1303,6 +1395,141 @@
                     categoryDiv.appendChild(categoryTitle);
                     categoryDiv.appendChild(recommendationList);
                     recommendationsContainer.appendChild(categoryDiv);
+                });
+            }
+            
+            // Funktion zum Speichern der Daten im localStorage
+            function saveData() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                        answers: answers,
+                        lastUpdated: new Date().toISOString()
+                    }));
+                    
+                    // Zeige Benachrichtigung
+                    showSaveNotification();
+                } catch (error) {
+                    console.error('Fehler beim Speichern der Daten:', error);
+                }
+            }
+            
+            // Funktion zum Laden der gespeicherten Daten
+            function loadSavedData() {
+                try {
+                    const savedData = localStorage.getItem(STORAGE_KEY);
+                    if (savedData) {
+                        const parsedData = JSON.parse(savedData);
+                        
+                        // Übernehme gespeicherte Antworten
+                        Object.assign(answers, parsedData.answers);
+                        
+                        // Fülle das Formular mit den gespeicherten Daten
+                        fillFormWithSavedData();
+                    }
+                } catch (error) {
+                    console.error('Fehler beim Laden der gespeicherten Daten:', error);
+                }
+            }
+            
+            // Funktion zum Füllen des Formulars mit gespeicherten Daten
+            function fillFormWithSavedData() {
+                // Gehe alle Formularfelder durch und fülle sie mit gespeicherten Werten
+                const allInputs = form.querySelectorAll('input, textarea, select');
+                allInputs.forEach(input => {
+                    if (answers[input.id]) {
+                        input.value = answers[input.id];
+                        
+                        // Aktualisiere Range-Slider-Anzeigen
+                        if (input.type === 'range') {
+                            const valueDisplay = document.getElementById(`${input.id}-value`);
+                            if (valueDisplay) {
+                                valueDisplay.textContent = input.value;
+                            }
+                        }
+                    }
+                });
+                
+                // Aktualisiere bedingte Felder
+                updatePartnerFields();
+            }
+            
+            // Funktion zum Anzeigen der Speicherbenachrichtigung
+            function showSaveNotification() {
+                saveNotification.classList.add('show');
+                
+                // Ausblenden nach kurzer Zeit
+                setTimeout(() => {
+                    saveNotification.classList.remove('show');
+                }, 2000);
+            }
+            
+            // Funktion zum Generieren und Herunterladen eines PDFs
+            function generatePDF() {
+                // jsPDF und html2canvas
+                const { jsPDF } = window.jspdf;
+                
+                // Erstelle ein neues PDF-Dokument
+                const doc = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                // Passe die Ergebnisansicht für das PDF an
+                const resultsClone = resultsContainer.cloneNode(true);
+                resultsClone.querySelector('.form-navigation').remove();
+                resultsClone.style.padding = '15mm';
+                resultsClone.style.backgroundColor = 'white';
+                resultsClone.style.position = 'absolute';
+                resultsClone.style.left = '-9999px';
+                document.body.appendChild(resultsClone);
+                
+                // Verwende html2canvas, um den Inhalt zu rendern
+                html2canvas(resultsClone, {
+                    scale: 2, // Höhere Auflösung
+                    useCORS: true,
+                    logging: false
+                }).then(canvas => {
+                    // Entferne den geklonten Container
+                    document.body.removeChild(resultsClone);
+                    
+                    // Berechne das Seitenverhältnis
+                    const imgWidth = 210 - 20; // A4 width (210mm) minus margins
+                    const imgHeight = canvas.height * imgWidth / canvas.width;
+                    
+                    // Konvertiere Canvas zu Bild
+                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                    
+                    // Ermittle, wie viele Seiten benötigt werden
+                    let heightLeft = imgHeight;
+                    let position = 0;
+                    const pageHeight = 295; // A4 height (297mm) minus margins
+                    
+                    // Füge Bild zur ersten Seite hinzu
+                    doc.addImage(imgData, 'JPEG', 10, 10, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                    
+                    // Füge weitere Seiten hinzu, falls erforderlich
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        doc.addPage();
+                        doc.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                    
+                    // PDF Metadaten
+                    doc.setProperties({
+                        title: 'Meine Lebensplanung',
+                        subject: 'Persönliche Lebensplanung und Empfehlungen',
+                        author: 'vorsorge.berlin',
+                        creator: 'Lebensplanung Tool'
+                    });
+                    
+                    // Lade PDF herunter
+                    doc.save('Meine_Lebensplanung.pdf');
+                }).catch(error => {
+                    console.error('Fehler beim Erstellen des PDF:', error);
+                    alert('Beim Erstellen des PDF ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.');
                 });
             }
         });
