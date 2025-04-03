@@ -1,0 +1,552 @@
+import React, { useState } from 'react';
+
+const LebensplanungFormular = () => {
+  // Zustand für alle Antworten
+  const [answers, setAnswers] = useState({});
+  // Zustand für den aktuellen Schritt
+  const [currentStep, setCurrentStep] = useState(0);
+  // Zustand für die Anzeige der Auswertung
+  const [showResults, setShowResults] = useState(false);
+
+  // Definition der Kategorien und Fragen
+  const categories = [
+    {
+      id: 'arbeit',
+      title: 'ARBEIT',
+      questions: [
+        { id: 'arbeit10', text: 'Welcher Arbeit möchte ich in 10 Jahren nachgehen?', type: 'text' },
+        { id: 'arbeit20', text: 'Welcher Arbeit möchte ich in 20 Jahren nachgehen?', type: 'text' },
+        { id: 'arbeit30', text: 'Welcher Arbeit möchte ich in 30 Jahren nachgehen?', type: 'text' },
+        { 
+          id: 'nochArbeiten', 
+          text: 'Will ich dann überhaupt noch arbeiten?', 
+          type: 'select',
+          options: ['Ja, Vollzeit', 'Ja, Teilzeit', 'Nur gelegentlich', 'Nein, gar nicht mehr']
+        },
+        { 
+          id: 'stellenwert', 
+          text: 'Welchen Stellenwert soll Arbeit in meinem Leben haben?', 
+          type: 'select',
+          options: ['Sehr hoch', 'Hoch', 'Ausgeglichen', 'Niedrig', 'Sehr niedrig']
+        },
+        { id: 'ruhestand', text: 'Wann möchte ich in den Ruhestand gehen?', type: 'text' },
+        { 
+          id: 'auszeit', 
+          text: 'Möchte ich schon vor dem Ruhestand eine längere Auszeit nehmen?', 
+          type: 'select',
+          options: ['Ja, definitiv', 'Eventuell', 'Eher nicht', 'Nein']
+        },
+        { 
+          id: 'durchstarten', 
+          text: 'Möchte ich noch einmal durchstarten, vielleicht sogar ein kleines Unternehmen oder ein Start-up gründen?', 
+          type: 'select',
+          options: ['Ja, definitiv', 'Wahrscheinlich', 'Vielleicht', 'Eher nicht', 'Auf keinen Fall']
+        },
+      ]
+    },
+    {
+      id: 'lebensmittelpunkt',
+      title: 'LEBENSMITTELPUNKT',
+      questions: [
+        { id: 'wohnort', text: 'Wo möchte ich leben? Warum ausgerechnet dort?', type: 'text' },
+        { 
+          id: 'auswandern', 
+          text: 'Kann ich mir vorstellen, das Land zu verlassen – auszuwandern – und wenn ja, wohin?', 
+          type: 'text' 
+        },
+        { 
+          id: 'eigentum', 
+          text: 'Wie wichtig ist mir in den nächsten Jahren das Eigentum, also ein eigenes Haus oder eine eigene Wohnung?', 
+          type: 'select',
+          options: ['Sehr wichtig', 'Wichtig', 'Neutral', 'Weniger wichtig', 'Unwichtig']
+        },
+        { 
+          id: 'lebensform', 
+          text: 'Wer lebt mit mir? Werde ich allein leben oder in einer Partnerschaft?', 
+          type: 'select',
+          options: ['Allein', 'Mit Partner/in', 'Mit Familie', 'In einer Wohngemeinschaft', 'Anders']
+        },
+        { id: 'partnerAlter', text: 'Wie alt wird meine Partnerin, mein Partner sein?', type: 'text', conditional: 'lebensform' },
+        { id: 'partnerTätigkeit', text: 'Was wird sie oder er machen?', type: 'text', conditional: 'lebensform' },
+        { id: 'kinder', text: 'Wenn ich Kinder habe, was werden die machen? Sollen sie mit mir leben?', type: 'text' },
+        { 
+          id: 'enkelkinder', 
+          text: 'Werde ich mich auch um Enkelkinder kümmern?', 
+          type: 'select',
+          options: ['Ja, intensiv', 'Gelegentlich', 'Eher nicht', 'Nein']
+        },
+        { 
+          id: 'eltern', 
+          text: 'Und was ist mit meinen Eltern, werden die mit mir leben?', 
+          type: 'select',
+          options: ['Ja, definitiv', 'Möglicherweise', 'Eher nicht', 'Auf keinen Fall']
+        },
+        { 
+          id: 'haustiere', 
+          text: 'Habe ich Haustiere?', 
+          type: 'select',
+          options: ['Ja, mehrere', 'Ja, eines', 'Noch nicht, aber geplant', 'Nein']
+        },
+      ]
+    },
+    {
+      id: 'versorgung',
+      title: 'VERSORGUNG',
+      questions: [
+        { id: 'unterstützung', text: 'Wenn ich an die nächsten 10 bis 20 Jahre denke, wen möchte ich unterstützt sehen?', type: 'text' },
+        { 
+          id: 'kinderUnterstützung', 
+          text: 'Werde ich meine Kinder unterstützen? Werde ich z. B. ihre Ausbildung finanzieren?', 
+          type: 'text' 
+        },
+        { id: 'eigenständigkeit', text: 'Wann, glaube ich, werden meine Kinder auf eigenen Füßen stehen?', type: 'text' },
+        { 
+          id: 'schenkungen', 
+          text: 'Plane ich Schenkungen an meine Kinder?', 
+          type: 'select',
+          options: ['Ja, umfangreich', 'Ja, moderat', 'Nur bei Bedarf', 'Eher nicht', 'Nein']
+        },
+        { 
+          id: 'immobilienÜbertragung', 
+          text: 'Gibt es die Überlegung, meinen Kindern eine Immobilie zu übertragen?', 
+          type: 'select',
+          options: ['Ja, definitiv', 'Eventuell', 'Eher nicht', 'Nein']
+        },
+        { id: 'pflege', text: 'Wie und wo möchte ich im Alter gepflegt werden?', type: 'text' },
+        { id: 'altersruhesitz', text: 'Habe ich schon so etwas wie einen Altersruhesitz im Auge?', type: 'text' },
+        { id: 'erbe', text: 'Wem möchte ich mein Vermögen vererben? Jemanden innerhalb oder außerhalb der Familie?', type: 'text' },
+        { 
+          id: 'spende', 
+          text: 'Will ich mit meinem Erbe eine gemeinnützige Organisation unterstützen? Wenn ja, wie hoch soll diese Unterstützung sein?', 
+          type: 'text' 
+        },
+      ]
+    },
+    {
+      id: 'freizeit',
+      title: 'FREIZEIT',
+      questions: [
+        { id: 'hobbys', text: 'Wie sieht meine Freizeit aus? Welchen Hobbys möchte ich nachgehen?', type: 'text' },
+        { 
+          id: 'neueHobbys', 
+          text: 'Möchte ich mich neuen Hobbys widmen?', 
+          type: 'select',
+          options: ['Ja, definitiv', 'Wahrscheinlich', 'Vielleicht', 'Eher nicht', 'Nein']
+        },
+        { id: 'reisepläne', text: 'Habe ich Reisepläne? Was möchte ich auf der Welt noch sehen? Wohin werde ich reisen?', type: 'text' },
+        { 
+          id: 'ehrenamt', 
+          text: 'Werde ich mich, wenn die Arbeit endet, ehrenamtlich engagieren? Wenn ja, was könnte ich mir vorstellen?', 
+          type: 'text' 
+        },
+        { id: 'traum', text: 'Gibt es darüber hinaus einen großen Traum oder einen Wunsch, den ich mir erfüllen möchte?', type: 'text' },
+        { id: 'ereignisse', text: 'Gibt es große Ereignisse, die ich noch feiern möchte? Jubiläen, Geburtstage?', type: 'text' },
+      ]
+    },
+    {
+      id: 'persönlichkeit',
+      title: 'PERSÖNLICHKEIT',
+      questions: [
+        { id: 'unlimitiert', text: 'Wer wäre ich, wenn ich unlimitierte Ressourcen und alle Freiheiten hätte?', type: 'text' },
+        { id: 'glück', text: 'Welche Dinge machen mich wirklich glücklich?', type: 'text' },
+        { id: 'kompetenz', text: 'Welche Dinge lassen mich mich kompetent und nützlich fühlen?', type: 'text' },
+        { id: 'befürchtung', text: 'Was ist meine schlimmste Befürchtung, wenn sich zu heute nichts ändert?', type: 'text' },
+        { id: 'zehnMillionen', text: 'Wenn ich zehn Millionen Euro hätte und wüsste, dass ich nur noch zehn Jahre zu leben hätte – was würde ich sofort anders machen?', type: 'text' },
+      ]
+    },
+    {
+      id: 'abschluss',
+      title: 'ABSCHLUSS',
+      questions: [
+        { 
+          id: 'sicherheit', 
+          text: 'Auf einer Skala von 1 bis 10: Wie hoch ist mein finanzielles Sicherheitsbedürfnis?', 
+          type: 'slider',
+          min: 1,
+          max: 10
+        },
+        { 
+          id: 'freiheit', 
+          text: 'Wie wichtig sind mir Freiheit und Flexibilität?', 
+          type: 'slider',
+          min: 1,
+          max: 10
+        },
+      ]
+    }
+  ];
+
+  // Funktion zum Aktualisieren der Antworten
+  const handleChange = (questionId, value) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: value
+    }));
+  };
+
+  // Funktion zum Navigieren zwischen den Schritten
+  const goToStep = (step) => {
+    if (step >= 0 && step < categories.length) {
+      setCurrentStep(step);
+    }
+  };
+
+  // Funktion zum Abschließen des Fragebogens und Anzeigen der Ergebnisse
+  const finishQuestionnaire = () => {
+    setShowResults(true);
+  };
+
+  // Funktion zur Analyse der Antworten und Generierung von Empfehlungen
+  const generateRecommendations = () => {
+    const recommendations = {
+      arbeit: [],
+      lebensmittelpunkt: [],
+      versorgung: [],
+      freizeit: [],
+      persönlichkeit: [],
+      allgemein: []
+    };
+
+    // Analysen für den Bereich ARBEIT
+    if (answers.stellenwert === 'Sehr hoch' || answers.stellenwert === 'Hoch') {
+      recommendations.arbeit.push('Karriereplanung scheint für Sie sehr wichtig zu sein. Investieren Sie in Ihre berufliche Weiterentwicklung und denken Sie über lebenslanges Lernen nach.');
+    }
+
+    if (answers.nochArbeiten === 'Nein, gar nicht mehr') {
+      recommendations.arbeit.push('Sie planen, die Arbeit vollständig aufzugeben. Stellen Sie sicher, dass Ihre finanzielle Planung diese Phase gut abdeckt.');
+    }
+
+    if (answers.durchstarten === 'Ja, definitiv' || answers.durchstarten === 'Wahrscheinlich') {
+      recommendations.arbeit.push('Überlegen Sie, welche Fähigkeiten und Ressourcen Sie für Ihr geplantes Unternehmen benötigen und beginnen Sie frühzeitig mit der Vorbereitung.');
+    }
+
+    if (answers.auszeit === 'Ja, definitiv' || answers.auszeit === 'Eventuell') {
+      recommendations.arbeit.push('Planen Sie Ihre Auszeit strategisch. Schaffen Sie finanzielle Reserven und klären Sie, wie sich diese Pause auf Ihre Altersvorsorge auswirken wird.');
+    }
+
+    // Analysen für den Bereich LEBENSMITTELPUNKT
+    if (answers.eigentum === 'Sehr wichtig' || answers.eigentum === 'Wichtig') {
+      recommendations.lebensmittelpunkt.push('Da Ihnen Eigentum wichtig ist, sollten Sie frühzeitig eine Immobilienfinanzierungsstrategie entwickeln, die zu Ihren Lebenszielen passt.');
+    }
+
+    if (answers.auswandern && answers.auswandern.toLowerCase() !== 'nein') {
+      recommendations.lebensmittelpunkt.push('Informieren Sie sich gründlich über die Lebenshaltungskosten, das Gesundheitssystem und die rechtlichen Aspekte im Zielland Ihrer Auswanderung.');
+    }
+
+    if (answers.eltern === 'Ja, definitiv' || answers.eltern === 'Möglicherweise') {
+      recommendations.lebensmittelpunkt.push('Die Pflege Ihrer Eltern kann emotional und finanziell herausfordernd sein. Planen Sie dafür entsprechende Ressourcen ein.');
+    }
+
+    // Analysen für den Bereich VERSORGUNG
+    if (answers.kinderUnterstützung && answers.kinderUnterstützung.toLowerCase().includes('ja')) {
+      recommendations.versorgung.push('Berücksichtigen Sie die finanzielle Unterstützung Ihrer Kinder in Ihrem langfristigen Budget und Ihrer Vermögensplanung.');
+    }
+
+    if (answers.immobilienÜbertragung === 'Ja, definitiv' || answers.immobilienÜbertragung === 'Eventuell') {
+      recommendations.versorgung.push('Konsultieren Sie einen Steuerberater oder Notar, um die optimale Strategie für die Immobilienübertragung zu finden.');
+    }
+
+    if (answers.spende && answers.spende.toLowerCase() !== 'nein') {
+      recommendations.versorgung.push('Informieren Sie sich über verschiedene Möglichkeiten der philanthropischen Planung, wie Stiftungen oder Spendenfonds.');
+    }
+
+    // Analysen für den Bereich FREIZEIT
+    if (answers.neueHobbys === 'Ja, definitiv' || answers.neueHobbys === 'Wahrscheinlich') {
+      recommendations.freizeit.push('Erforschen Sie neue Hobbys schon jetzt, um festzustellen, welche Ihnen langfristig Freude bereiten und in Ihre Zukunftsplanung passen.');
+    }
+
+    if (answers.ehrenamt && answers.ehrenamt.toLowerCase() !== 'nein') {
+      recommendations.freizeit.push('Ehrenamtliches Engagement kann im Ruhestand sehr erfüllend sein. Überlegen Sie, welche Fähigkeiten Sie einbringen können und welche Organisationen zu Ihren Werten passen.');
+    }
+
+    if (answers.reisepläne && answers.reisepläne.length > 10) {
+      recommendations.freizeit.push('Erstellen Sie einen zeitlichen und finanziellen Plan für Ihre Reisewünsche, um sicherzustellen, dass Sie all Ihre Traumziele erreichen können.');
+    }
+
+    // Analysen für den Bereich PERSÖNLICHKEIT
+    if (answers.zehnMillionen && answers.zehnMillionen.length > 10) {
+      recommendations.persönlichkeit.push('Die Dinge, die Sie sofort ändern würden, sollten auch ohne 10 Millionen Euro Priorität in Ihrem Leben haben. Überlegen Sie, wie Sie heute schon Schritte in diese Richtung machen können.');
+    }
+
+    if (answers.befürchtung && answers.befürchtung.length > 10) {
+      recommendations.persönlichkeit.push('Ihre Befürchtungen sind wichtige Indikatoren für Veränderungsbedarf. Entwickeln Sie einen Plan, um aktiv gegenzusteuern.');
+    }
+
+    // Analysen basierend auf den Abschlussfragen
+    if (answers.sicherheit >= 8) {
+      recommendations.allgemein.push('Ihr hohes Sicherheitsbedürfnis spricht für eine konservative Finanzplanung mit stabilen Anlagen und ausreichenden Reserven.');
+    } else if (answers.sicherheit <= 3) {
+      recommendations.allgemein.push('Mit Ihrem niedrigen Sicherheitsbedürfnis könnten Sie offener für Risiken in Ihrer Finanzplanung sein. Dennoch sollten gewisse Grundabsicherungen nicht vernachlässigt werden.');
+    }
+
+    if (answers.freiheit >= 8) {
+      recommendations.allgemein.push('Freiheit und Flexibilität sind Ihnen sehr wichtig. Bevorzugen Sie in Ihrer Planung Optionen, die Ihnen Wahlmöglichkeiten offen halten und nicht zu viele langfristige Verpflichtungen schaffen.');
+    }
+
+    // Allgemeine Empfehlungen
+    recommendations.allgemein.push('Überprüfen Sie Ihre Lebensplanung regelmäßig und passen Sie sie an veränderte Lebensumstände an.');
+    recommendations.allgemein.push('Sprechen Sie mit wichtigen Personen in Ihrem Leben über Ihre Pläne, um gemeinsame Visionen zu entwickeln und mögliche Konflikte frühzeitig zu erkennen.');
+
+    return recommendations;
+  };
+
+  // Generiere einen Persönlichkeitstyp basierend auf den Antworten
+  const generatePersonalityType = () => {
+    let type = "";
+    let description = "";
+
+    // Einfache Typengenerierung basierend auf Schlüsselantworten
+    if (answers.sicherheit >= 7 && answers.stellenwert === 'Sehr hoch') {
+      type = "Der Traditionalist";
+      description = "Sie legen Wert auf Sicherheit und strukturierte Karrierewege. Stabilität ist Ihnen wichtiger als Abenteuer, und Sie planen Ihr Leben vorausschauend.";
+    } else if (answers.freiheit >= 7 && (answers.durchstarten === 'Ja, definitiv' || answers.neueHobbys === 'Ja, definitiv')) {
+      type = "Der Entdecker";
+      description = "Sie sind offen für Neues und scheuen keine Veränderungen. Flexibilität und Selbstbestimmung sind Ihnen wichtiger als Sicherheit.";
+    } else if (answers.eigentum === 'Sehr wichtig' && answers.spende && answers.spende.toLowerCase() !== 'nein') {
+      type = "Der Gemeinschaftsorientierte";
+      description = "Sie legen Wert auf Besitz und materielle Sicherheit, möchten aber auch anderen etwas zurückgeben und zum Gemeinwohl beitragen.";
+    } else if (answers.ehrenamt && answers.ehrenamt.toLowerCase() !== 'nein' && answers.freiheit >= 5) {
+      type = "Der Idealistische Helfer";
+      description = "Sie möchten Ihre Fähigkeiten und Zeit für andere einsetzen, dabei aber Ihre persönliche Freiheit behalten.";
+    } else {
+      type = "Der Ausgewogene";
+      description = "Sie streben nach einer Balance zwischen verschiedenen Lebensbereichen und treffen Ihre Entscheidungen situativ und flexibel.";
+    }
+
+    return { type, description };
+  };
+
+  // Komponente zur Anzeige einer Frage
+  const renderQuestion = (question) => {
+    // Wenn die Frage nur angezeigt werden soll, wenn eine bestimmte andere Frage beantwortet wurde
+    if (question.conditional && 
+        (!answers[question.conditional] || 
+         answers[question.conditional] === 'Allein' || 
+         answers[question.conditional] === 'Nein')) {
+      return null;
+    }
+    
+    switch (question.type) {
+      case 'text':
+        return (
+          <div className="mb-4" key={question.id}>
+            <label className="block text-gray-700 text-sm font-bold mb-2">{question.text}</label>
+            <textarea
+              className="border rounded w-full py-2 px-3 text-gray-700"
+              value={answers[question.id] || ''}
+              onChange={(e) => handleChange(question.id, e.target.value)}
+              rows="3"
+            />
+          </div>
+        );
+      case 'select':
+        return (
+          <div className="mb-4" key={question.id}>
+            <label className="block text-gray-700 text-sm font-bold mb-2">{question.text}</label>
+            <select
+              className="border rounded w-full py-2 px-3 text-gray-700"
+              value={answers[question.id] || ''}
+              onChange={(e) => handleChange(question.id, e.target.value)}
+            >
+              <option value="">Bitte wählen</option>
+              {question.options.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+        );
+      case 'slider':
+        return (
+          <div className="mb-4" key={question.id}>
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              {question.text} ({answers[question.id] || question.min})
+            </label>
+            <input
+              type="range"
+              className="w-full"
+              min={question.min}
+              max={question.max}
+              value={answers[question.id] || question.min}
+              onChange={(e) => handleChange(question.id, parseInt(e.target.value))}
+            />
+            <div className="flex justify-between text-xs">
+              <span>Niedrig</span>
+              <span>Hoch</span>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Render-Funktion für die aktuelle Kategorie
+  const renderCurrentCategory = () => {
+    const category = categories[currentStep];
+    return (
+      <div className="bg-white p-6 rounded shadow">
+        <h2 className="text-2xl font-bold mb-6">{category.title}</h2>
+        {category.questions.map(renderQuestion)}
+        <div className="flex justify-between mt-6">
+          {currentStep > 0 && (
+            <button
+              className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded"
+              onClick={() => goToStep(currentStep - 1)}
+            >
+              Zurück
+            </button>
+          )}
+          {currentStep < categories.length - 1 ? (
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded"
+              onClick={() => goToStep(currentStep + 1)}
+            >
+              Weiter
+            </button>
+          ) : (
+            <button
+              className="bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded"
+              onClick={finishQuestionnaire}
+            >
+              Fragebogen abschließen
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Render-Funktion für die Auswertung
+  const renderResults = () => {
+    const recommendations = generateRecommendations();
+    const personality = generatePersonalityType();
+    
+    return (
+      <div className="bg-white p-6 rounded shadow">
+        <h2 className="text-2xl font-bold mb-6">Ihre persönliche Auswertung</h2>
+        
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold mb-4">Ihr Persönlichkeitsprofil: {personality.type}</h3>
+          <p className="mb-4">{personality.description}</p>
+          
+          <div className="bg-blue-50 p-4 rounded mb-4">
+            <h4 className="text-lg font-medium mb-2">Überblick Ihrer Antworten:</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p><strong>Sicherheitsbedürfnis:</strong> {answers.sicherheit}/10</p>
+                <p><strong>Freiheitsbedürfnis:</strong> {answers.freiheit}/10</p>
+                <p><strong>Stellenwert der Arbeit:</strong> {answers.stellenwert || "Keine Angabe"}</p>
+                <p><strong>Wohnwünsche:</strong> {answers.wohnort ? (answers.wohnort.length > 50 ? answers.wohnort.substring(0, 50) + "..." : answers.wohnort) : "Keine Angabe"}</p>
+              </div>
+              <div>
+                <p><strong>Langfristige Träume:</strong> {answers.traum ? (answers.traum.length > 50 ? answers.traum.substring(0, 50) + "..." : answers.traum) : "Keine Angabe"}</p>
+                <p><strong>Ruhestandspläne:</strong> {answers.ruhestand || "Keine Angabe"}</p>
+                <p><strong>Familiäre Pläne:</strong> {answers.lebensform || "Keine Angabe"}</p>
+                <p><strong>Ehrenamtliches Engagement:</strong> {answers.ehrenamt ? (answers.ehrenamt.length > 50 ? answers.ehrenamt.substring(0, 50) + "..." : answers.ehrenamt) : "Keine Angabe"}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold mb-4">Ihre Empfehlungen</h3>
+          
+          {Object.entries(recommendations).map(([category, recs]) => {
+            if (recs.length === 0) return null;
+            
+            let categoryTitle;
+            switch(category) {
+              case 'arbeit': categoryTitle = "Berufliche Entwicklung"; break;
+              case 'lebensmittelpunkt': categoryTitle = "Wohn- und Lebenssituation"; break;
+              case 'versorgung': categoryTitle = "Vorsorge und Vermögensplanung"; break;
+              case 'freizeit': categoryTitle = "Freizeitgestaltung"; break;
+              case 'persönlichkeit': categoryTitle = "Persönliche Entwicklung"; break;
+              case 'allgemein': categoryTitle = "Allgemeine Empfehlungen"; break;
+              default: categoryTitle = category;
+            }
+            
+            return (
+              <div key={category} className="mb-4">
+                <h4 className="text-lg font-medium mb-2">{categoryTitle}</h4>
+                <ul className="list-disc pl-6">
+                  {recs.map((rec, index) => (
+                    <li key={index} className="mb-1">{rec}</li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+        
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold mb-4">Nächste Schritte</h3>
+          <ol className="list-decimal pl-6">
+            <li className="mb-2">Reflektieren Sie die Ergebnisse und diskutieren Sie diese mit Ihren engsten Vertrauten.</li>
+            <li className="mb-2">Formulieren Sie konkrete Ziele für die nächsten 1, 5 und 10 Jahre.</li>
+            <li className="mb-2">Überprüfen Sie Ihre finanzielle Situation und stimmen Sie diese auf Ihre Lebensziele ab.</li>
+            <li className="mb-2">Suchen Sie bei Bedarf professionelle Unterstützung, z.B. in Finanz- oder Karrierefragen.</li>
+            <li className="mb-2">Wiederholen Sie diese Übung regelmäßig (z.B. jährlich), um Ihre Fortschritte zu verfolgen und Anpassungen vorzunehmen.</li>
+          </ol>
+        </div>
+        
+        <div className="flex justify-between mt-6">
+          <button
+            className="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded"
+            onClick={() => {
+              setShowResults(false);
+              setCurrentStep(0);
+            }}
+          >
+            Zurück zum Fragebogen
+          </button>
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded"
+            onClick={() => {
+              alert("Funktion zum Drucken oder Speichern würde hier implementiert werden.");
+            }}
+          >
+            Ergebnisse speichern
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-4">
+      <h1 className="text-3xl font-bold text-center mb-8">Meine Lebensplanung</h1>
+      
+      {!showResults ? (
+        <div>
+          <div className="mb-8">
+            <div className="flex items-center">
+              {categories.map((category, index) => (
+                <React.Fragment key={category.id}>
+                  <div 
+                    className={`w-10 h-10 flex items-center justify-center rounded-full cursor-pointer ${currentStep === index ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                    onClick={() => goToStep(index)}
+                  >
+                    {index + 1}
+                  </div>
+                  {index < categories.length - 1 && (
+                    <div className="h-1 flex-1 bg-gray-200"></div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+            <div className="flex justify-between mt-2 text-sm text-gray-600">
+              <div>{categories[0].title}</div>
+              <div className="text-right">{categories[categories.length-1].title}</div>
+            </div>
+          </div>
+          
+          {renderCurrentCategory()}
+        </div>
+      ) : (
+        renderResults()
+      )}
+    </div>
+  );
+};
+
+export default LebensplanungFormular;
